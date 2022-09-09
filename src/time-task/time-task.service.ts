@@ -42,9 +42,13 @@ export class TimeTaskService {
   public async createTask() {
     const job = this.schedulerRegistry.getCronJob('add-task');
     const timeIn = dayjs().format('DD-MM-YYYY HH:mm:ss [Z] A');
-    const randomMinute = Math.ceil(Math.random() * 15);
     const timeOut = job.lastDate();
-    const addTimeOut = dayjs(timeOut).add(randomMinute, 'minute');
+    const formattedTimeOut = dayjs(timeOut).format();
+    const randomMinute = Math.ceil(Math.random() * 15);
+    const addTimeOut = dayjs(formattedTimeOut)
+      .add(randomMinute, 'minute')
+      .format();
+
     const description = faker.git.commitMessage();
     const task = await new this.taskModel({ timeIn, addTimeOut, description });
     return task.save();
