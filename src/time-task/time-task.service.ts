@@ -35,16 +35,18 @@ export class TimeTaskService {
     }
     return task;
   }
-  @Cron('0 */1 * * * *', {
-    name: 'notifications',
+  @Cron('0 */3 * * * *', {
+    name: 'add-task',
     timeZone: 'America/Argentina/Buenos_Aires',
   })
   public async createTask() {
-    const job = this.schedulerRegistry.getCronJob('notifications');
+    const job = this.schedulerRegistry.getCronJob('add-task');
     const timeIn = dayjs().format('DD-MM-YYYY HH:mm:ss [Z] A');
+    const randomMinute = Math.ceil(Math.random() * 15);
     const timeOut = job.lastDate();
+    const addTimeOut = dayjs(timeOut).add(randomMinute, 'minute');
     const description = faker.git.commitMessage();
-    const task = await new this.taskModel({ timeIn, timeOut, description });
+    const task = await new this.taskModel({ timeIn, addTimeOut, description });
     return task.save();
   }
   public async deleteTaskById(id: number): Promise<TaskDto> {
