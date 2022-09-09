@@ -37,7 +37,7 @@ export class TimeTaskController {
     return this.timeTaskService.updateTaskById(id, propertyName, propertyValue);
   }
   @Post()
-  public createTask(@Body() task: TaskDto) {
-    return this.timeTaskService.createTask(task);
+  public createTask() {
+    return this.timeTaskService.createTask();
   }
 }

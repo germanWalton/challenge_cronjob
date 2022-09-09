@@ -1,8 +1,12 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ITask } from './interfaces/task.interface';
 import { TaskDto } from './task.dto';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import * as dayjs from 'dayjs';
+import { faker } from '@faker-js/faker/locale/de';
 
 const taskProjection = {
   __v: false,
@@ -10,12 +14,18 @@ const taskProjection = {
 
 @Injectable()
 export class TimeTaskService {
-  constructor(@InjectModel('Task') private readonly taskModel: Model<ITask>) {}
+  private readonly logger = new Logger(TimeTaskService.name);
+  constructor(
+    @InjectModel('Task') private readonly taskModel: Model<ITask>,
+    private schedulerRegistry: SchedulerRegistry,
+  ) {}
+
   public async getTasks(): Promise<TaskDto[]> {
     const tasks = await this.taskModel.find({}, taskProjection).exec();
     if (!tasks || !tasks[0]) {
       throw new HttpException('Not found', 404);
     }
+    this.logger.log(tasks);
     return tasks;
   }
   public async getTaskById(id: number): Promise<TaskDto> {
@@ -25,8 +35,16 @@ export class TimeTaskService {
     }
     return task;
   }
-  public async createTask(newTask: TaskDto) {
-    const task = await new this.taskModel(newTask);
+  @Cron('0 */1 * * * *', {
+    name: 'notifications',
+    timeZone: 'America/Argentina/Buenos_Aires',
+  })
+  public async createTask() {
+    const job = this.schedulerRegistry.getCronJob('notifications');
+    const timeIn = dayjs().format('DD-MM-YYYY HH:mm:ss [Z] A');
+    const timeOut = job.lastDate();
+    const description = faker.git.commitMessage();
+    const task = await new this.taskModel({ timeIn, timeOut, description });
     return task.save();
   }
   public async deleteTaskById(id: number): Promise<TaskDto> {
