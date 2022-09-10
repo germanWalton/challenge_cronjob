@@ -3,6 +3,7 @@ import { TimeTaskController } from './time-task.controller';
 import { TimeTaskService } from './time-task.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TaskSchema } from './schemas/task.schema';
+import { ChatGateway } from './socket-backend/chat.gateway';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { TaskSchema } from './schemas/task.schema';
     ]),
   ],
   controllers: [TimeTaskController],
-  providers: [TimeTaskService],
+  providers: [TimeTaskService, ChatGateway],
 })
 export class TimeTaskModule {}

@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Get,
   Delete,
@@ -8,7 +7,6 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { TaskDto } from './task.dto';
 import { TimeTaskService } from './time-task.service';
 
 @Controller('time-task')
