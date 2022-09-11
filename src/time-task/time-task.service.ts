@@ -1,5 +1,5 @@
 import { Injectable, HttpException, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ITask } from './interfaces/task.interface';
@@ -7,27 +7,45 @@ import { TaskDto } from './task.dto';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import * as dayjs from 'dayjs';
 import { faker } from '@faker-js/faker/locale/de';
+import {
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+import { Server } from 'socket.io';
 
 const taskProjection = {
   __v: false,
 };
 
 @Injectable()
+@WebSocketGateway(5500, {
+  cors: { origin: '*' },
+})
 export class TimeTaskService {
+  @WebSocketServer()
+  server: Server;
+  @SubscribeMessage('message')
+  handleMessage(@MessageBody() message: Array<TaskDto>): void {
+    this.server.emit('message', message);
+  }
   private readonly logger = new Logger(TimeTaskService.name);
   constructor(
     @InjectModel('Task') private readonly taskModel: Model<ITask>,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
 
+  @Cron('0 */3 * * * *')
   public async getTasks(): Promise<TaskDto[]> {
     const tasks = await this.taskModel.find({}, taskProjection).exec();
     if (!tasks || !tasks[0]) {
       throw new HttpException('Not found', 404);
     }
-    this.logger.log(tasks);
+    this.handleMessage(tasks);
     return tasks;
   }
+
   public async getTaskById(id: number): Promise<TaskDto> {
     const task = await this.taskModel.findOne({ id }, taskProjection).exec();
     if (!task) {
@@ -35,6 +53,7 @@ export class TimeTaskService {
     }
     return task;
   }
+
   @Cron('0 */3 * * * *', {
     name: 'add-task',
     timeZone: 'America/Argentina/Buenos_Aires',
@@ -53,6 +72,7 @@ export class TimeTaskService {
     const task = await new this.taskModel({ timeIn, addTimeOut, description });
     return task.save();
   }
+
   public async deleteTaskById(id: number): Promise<TaskDto> {
     const task = await this.taskModel.findByIdAndDelete(id).exec();
     if (!task.$isDeleted) {
@@ -60,6 +80,7 @@ export class TimeTaskService {
     }
     return task;
   }
+
   public async updateTaskById(
     id: number,
     propertyName: string,

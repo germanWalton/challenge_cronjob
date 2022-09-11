@@ -1,14 +1,11 @@
 const socket = io('http://localhost:5500');
-
-const message = document.getElementById('message');
 const messages = document.getElementById('messages');
 
-const handleSubmitNewMessage = () => {
-  socket.emit('message', { data: message.value });
-};
-
-socket.on('message', ({ data }) => {
-  handleNewMessage(data);
+socket.on('message', (data) => {
+  data.map((entry) => {
+    const parsed = JSON.stringify(entry);
+    handleNewMessage(parsed);
+  });
 });
 
 const handleNewMessage = (message) => {
